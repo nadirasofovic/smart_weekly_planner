@@ -1,7 +1,10 @@
+import { useMemo, useState } from "react";
 import { TaskForm } from "./components/TaskForm";
 import { TaskList } from "./components/TaskList";
+import { FilterBar } from "./components/FilterBar";
 import { useTasks } from "./hooks/useTasks";
 import type { DayKey, Task } from "./types/task";
+import type { Filters } from "./types/filters";
 
 const DAY_LABEL: Record<DayKey, string> = {
   mon: "Ponedjeljak",
@@ -16,7 +19,27 @@ const DAY_LABEL: Record<DayKey, string> = {
 export default function App() {
   const { tasks, addTask, deleteTask, updateTask, stats } = useTasks();
 
-  const grouped = groupByDay(tasks);
+  const [filters, setFilters] = useState<Filters>({
+    day: "all",
+    priority: "all",
+    status: "all",
+    query: "",
+  });
+
+  const visibleTasks = useMemo(() => {
+    const q = filters.query.trim().toLowerCase();
+
+    return tasks.filter((t) => {
+      const dayOk = filters.day === "all" || t.day === filters.day;
+      const prioOk = filters.priority === "all" || t.priority === filters.priority;
+      const statusOk = filters.status === "all" || t.status === filters.status;
+      const queryOk = !q || t.title.toLowerCase().includes(q);
+
+      return dayOk && prioOk && statusOk && queryOk;
+    });
+  }, [tasks, filters]);
+
+  const grouped = groupByDay(visibleTasks);
 
   return (
     <div style={page}>
@@ -25,6 +48,9 @@ export default function App() {
           <h1 style={{ margin: 0 }}>Raspored+</h1>
           <p style={{ margin: "6px 0 0", color: "#6b7280" }}>
             Završeno: {stats.done}/{stats.total} • {stats.percent}%
+          </p>
+          <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 12 }}>
+            Prikazano: {visibleTasks.length}/{tasks.length}
           </p>
         </div>
 
@@ -35,13 +61,19 @@ export default function App() {
 
       <main style={grid}>
         <section style={{ display: "grid", gap: 12 }}>
+          <FilterBar
+            value={filters}
+            onChange={setFilters}
+            onReset={() =>
+              setFilters({ day: "all", priority: "all", status: "all", query: "" })
+            }
+          />
+
           <TaskForm onAdd={(t: Task) => addTask(t)} />
         </section>
 
         <section style={{ display: "grid", gap: 12 }}>
-          {(
-            Object.keys(DAY_LABEL) as DayKey[]
-          ).map((day) => (
+          {(Object.keys(DAY_LABEL) as DayKey[]).map((day) => (
             <TaskList
               key={day}
               title={DAY_LABEL[day]}
