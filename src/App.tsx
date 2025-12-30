@@ -64,9 +64,7 @@ export default function App() {
           <FilterBar
             value={filters}
             onChange={setFilters}
-            onReset={() =>
-              setFilters({ day: "all", priority: "all", status: "all", query: "" })
-            }
+            onReset={() => setFilters({ day: "all", priority: "all", status: "all", query: "" })}
           />
 
           <TaskForm onAdd={(t: Task) => addTask(t)} />
@@ -82,6 +80,7 @@ export default function App() {
               onToggleDone={(id, nextDone) =>
                 updateTask(id, { status: nextDone ? "done" : "todo" })
               }
+              onUpdate={updateTask}
             />
           ))}
         </section>
