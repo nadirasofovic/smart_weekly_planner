@@ -48,14 +48,14 @@ export default function App() {
 
   return (
     <div style={page(isDark)}>
-      <header style={header}>
-        <div style={headerTopRow}>
+      <header style={header(isDark)}>
+        <div style={headerInner}>
           <div>
             <h1 style={{ margin: 0 }}>Raspored+</h1>
-            <p style={{ margin: "6px 0 0", color: isDark ? "#9ca3af" : "#6b7280" }}>
+            <p style={muted(isDark)}>
               Završeno: {stats.done}/{stats.total} • {stats.percent}%
             </p>
-            <p style={{ margin: "6px 0 0", color: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}>
+            <p style={{ ...muted(isDark), fontSize: 12 }}>
               Prikazano: {visibleTasks.length}/{tasks.length}
             </p>
           </div>
@@ -63,7 +63,6 @@ export default function App() {
           <button
             style={themeBtn(isDark)}
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            aria-label="Toggle dark mode"
           >
             {isDark ? "☀️ Light" : "🌙 Dark"}
           </button>
@@ -74,33 +73,37 @@ export default function App() {
         </div>
       </header>
 
-      <main style={grid}>
-        <section style={{ display: "grid", gap: 12 }}>
-          <FilterBar
-            value={filters}
-            onChange={setFilters}
-            onReset={() => setFilters({ day: "all", priority: "all", status: "all", query: "" })}
-            dark={isDark}
-          />
-
-          <TaskForm onAdd={(t: Task) => addTask(t)} dark={isDark} />
-        </section>
-
-        <section style={{ display: "grid", gap: 12 }}>
-          {(Object.keys(DAY_LABEL) as DayKey[]).map((day) => (
-            <TaskList
-              key={day}
-              title={DAY_LABEL[day]}
-              tasks={grouped[day]}
-              onDelete={deleteTask}
-              onToggleDone={(id, nextDone) =>
-                updateTask(id, { status: nextDone ? "done" : "todo" })
+      <main style={main}>
+        <div style={contentGrid}>
+          <section style={{ display: "grid", gap: 12 }}>
+            <FilterBar
+              value={filters}
+              onChange={setFilters}
+              onReset={() =>
+                setFilters({ day: "all", priority: "all", status: "all", query: "" })
               }
-              onUpdate={updateTask}
               dark={isDark}
             />
-          ))}
-        </section>
+
+            <TaskForm onAdd={(t: Task) => addTask(t)} dark={isDark} />
+          </section>
+
+          <section style={{ display: "grid", gap: 12 }}>
+            {(Object.keys(DAY_LABEL) as DayKey[]).map((day) => (
+              <TaskList
+                key={day}
+                title={DAY_LABEL[day]}
+                tasks={grouped[day]}
+                onDelete={deleteTask}
+                onToggleDone={(id, nextDone) =>
+                  updateTask(id, { status: nextDone ? "done" : "todo" })
+                }
+                onUpdate={updateTask}
+                dark={isDark}
+              />
+            ))}
+          </section>
+        </div>
       </main>
     </div>
   );
@@ -116,57 +119,58 @@ function groupByDay(tasks: Task[]) {
     sat: [],
     sun: [],
   };
-
   for (const t of tasks) base[t.day].push(t);
   return base;
 }
-
-const header: React.CSSProperties = {
-  maxWidth: 1100,
-  margin: "0 auto 16px",
-  display: "grid",
-  gap: 10,
-};
-
-const headerTopRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: 12,
-};
-
-const grid: React.CSSProperties = {
-  maxWidth: 1100,
-  margin: "0 auto",
-  display: "grid",
-  gridTemplateColumns: "360px 1fr",
-  gap: 16,
-};
 
 const page = (dark: boolean): React.CSSProperties => ({
   minHeight: "100vh",
   background: dark ? "#0b1220" : "#f6f7fb",
   color: dark ? "#e5e7eb" : "#111827",
-  padding: 24,
-  fontFamily: "system-ui",
 });
 
+const header = (dark: boolean): React.CSSProperties => ({
+  padding: "24px 32px",
+  borderBottom: dark ? "1px solid #1f2937" : "1px solid #e5e7eb",
+});
+
+const headerInner: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 16,
+};
+
+const muted = (dark: boolean): React.CSSProperties => ({
+  margin: "6px 0 0",
+  color: dark ? "#9ca3af" : "#6b7280",
+});
+
+const main: React.CSSProperties = {
+  padding: "24px 32px",
+};
+
+const contentGrid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "360px 1fr",
+  gap: 24,
+};
+
 const themeBtn = (dark: boolean): React.CSSProperties => ({
-  padding: "10px 12px",
+  padding: "10px 14px",
   borderRadius: 12,
   border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
   background: dark ? "#0f172a" : "white",
   color: dark ? "#e5e7eb" : "#111827",
   cursor: "pointer",
-  whiteSpace: "nowrap",
 });
 
 const progressWrap = (dark: boolean): React.CSSProperties => ({
+  marginTop: 16,
   height: 10,
   background: dark ? "#111827" : "#e5e7eb",
   borderRadius: 999,
   overflow: "hidden",
-  border: dark ? "1px solid #1f2937" : "none",
 });
 
 const progressBar = (dark: boolean, percent: number): React.CSSProperties => ({
