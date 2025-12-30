@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TaskForm } from "./components/TaskForm";
 import { TaskList } from "./components/TaskList";
 import { FilterBar } from "./components/FilterBar";
 import { useTasks } from "./hooks/useTasks";
 import type { DayKey, Task } from "./types/task";
 import type { Filters } from "./types/filters";
+import { loadTheme, saveTheme, type ThemeMode } from "./utils/theme";
 
 const DAY_LABEL: Record<DayKey, string> = {
   mon: "Ponedjeljak",
@@ -18,6 +19,10 @@ const DAY_LABEL: Record<DayKey, string> = {
 
 export default function App() {
   const { tasks, addTask, deleteTask, updateTask, stats } = useTasks();
+
+  const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
+  useEffect(() => saveTheme(theme), [theme]);
+  const isDark = theme === "dark";
 
   const [filters, setFilters] = useState<Filters>({
     day: "all",
@@ -42,20 +47,30 @@ export default function App() {
   const grouped = groupByDay(visibleTasks);
 
   return (
-    <div style={page}>
+    <div style={page(isDark)}>
       <header style={header}>
-        <div>
-          <h1 style={{ margin: 0 }}>Raspored+</h1>
-          <p style={{ margin: "6px 0 0", color: "#6b7280" }}>
-            Završeno: {stats.done}/{stats.total} • {stats.percent}%
-          </p>
-          <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 12 }}>
-            Prikazano: {visibleTasks.length}/{tasks.length}
-          </p>
+        <div style={headerTopRow}>
+          <div>
+            <h1 style={{ margin: 0 }}>Raspored+</h1>
+            <p style={{ margin: "6px 0 0", color: isDark ? "#9ca3af" : "#6b7280" }}>
+              Završeno: {stats.done}/{stats.total} • {stats.percent}%
+            </p>
+            <p style={{ margin: "6px 0 0", color: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}>
+              Prikazano: {visibleTasks.length}/{tasks.length}
+            </p>
+          </div>
+
+          <button
+            style={themeBtn(isDark)}
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            aria-label="Toggle dark mode"
+          >
+            {isDark ? "☀️ Light" : "🌙 Dark"}
+          </button>
         </div>
 
-        <div style={progressWrap}>
-          <div style={{ ...progressBar, width: `${stats.percent}%` }} />
+        <div style={progressWrap(isDark)}>
+          <div style={progressBar(isDark, stats.percent)} />
         </div>
       </header>
 
@@ -65,9 +80,10 @@ export default function App() {
             value={filters}
             onChange={setFilters}
             onReset={() => setFilters({ day: "all", priority: "all", status: "all", query: "" })}
+            dark={isDark}
           />
 
-          <TaskForm onAdd={(t: Task) => addTask(t)} />
+          <TaskForm onAdd={(t: Task) => addTask(t)} dark={isDark} />
         </section>
 
         <section style={{ display: "grid", gap: 12 }}>
@@ -81,6 +97,7 @@ export default function App() {
                 updateTask(id, { status: nextDone ? "done" : "todo" })
               }
               onUpdate={updateTask}
+              dark={isDark}
             />
           ))}
         </section>
@@ -104,13 +121,6 @@ function groupByDay(tasks: Task[]) {
   return base;
 }
 
-const page: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#f6f7fb",
-  padding: 24,
-  fontFamily: "system-ui",
-};
-
 const header: React.CSSProperties = {
   maxWidth: 1100,
   margin: "0 auto 16px",
@@ -118,16 +128,11 @@ const header: React.CSSProperties = {
   gap: 10,
 };
 
-const progressWrap: React.CSSProperties = {
-  height: 10,
-  background: "#e5e7eb",
-  borderRadius: 999,
-  overflow: "hidden",
-};
-
-const progressBar: React.CSSProperties = {
-  height: "100%",
-  background: "#111827",
+const headerTopRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 12,
 };
 
 const grid: React.CSSProperties = {
@@ -137,3 +142,35 @@ const grid: React.CSSProperties = {
   gridTemplateColumns: "360px 1fr",
   gap: 16,
 };
+
+const page = (dark: boolean): React.CSSProperties => ({
+  minHeight: "100vh",
+  background: dark ? "#0b1220" : "#f6f7fb",
+  color: dark ? "#e5e7eb" : "#111827",
+  padding: 24,
+  fontFamily: "system-ui",
+});
+
+const themeBtn = (dark: boolean): React.CSSProperties => ({
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#0f172a" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+});
+
+const progressWrap = (dark: boolean): React.CSSProperties => ({
+  height: 10,
+  background: dark ? "#111827" : "#e5e7eb",
+  borderRadius: 999,
+  overflow: "hidden",
+  border: dark ? "1px solid #1f2937" : "none",
+});
+
+const progressBar = (dark: boolean, percent: number): React.CSSProperties => ({
+  height: "100%",
+  width: `${percent}%`,
+  background: dark ? "#e5e7eb" : "#111827",
+});

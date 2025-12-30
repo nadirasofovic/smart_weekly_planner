@@ -6,6 +6,7 @@ type Props = {
   task: Task | null;
   onClose: () => void;
   onSave: (id: string, patch: Partial<Task>) => void;
+  dark?: boolean; 
 };
 
 const DAYS: { key: DayKey; label: string }[] = [
@@ -18,7 +19,7 @@ const DAYS: { key: DayKey; label: string }[] = [
   { key: "sun", label: "Ned" },
 ];
 
-export function EditTaskModal({ open, task, onClose, onSave }: Props) {
+export function EditTaskModal({ open, task, onClose, onSave, dark = false }: Props) {
   const [title, setTitle] = useState("");
   const [day, setDay] = useState<DayKey>("mon");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -55,23 +56,23 @@ export function EditTaskModal({ open, task, onClose, onSave }: Props) {
 
   return (
     <div
-      style={backdrop}
+      style={backdrop(dark)}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div style={modal} role="dialog" aria-modal="true" aria-label="Edit task">
+      <div style={modal(dark)} role="dialog" aria-modal="true" aria-label="Edit task">
         <div style={topRow}>
           <h3 style={{ margin: 0 }}>Uredi zadatak</h3>
-          <button style={closeBtn} onClick={onClose} aria-label="Close">
+          <button style={closeBtn(dark)} onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>
 
-        <label style={label}>
+        <label style={label(dark)}>
           Naziv
           <input
-            style={input}
+            style={input(dark)}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Npr. završiti domaću zadaću"
@@ -84,9 +85,9 @@ export function EditTaskModal({ open, task, onClose, onSave }: Props) {
         </label>
 
         <div style={grid}>
-          <label style={label}>
+          <label style={label(dark)}>
             Dan
-            <select value={day} onChange={(e) => setDay(e.target.value as DayKey)} style={select}>
+            <select value={day} onChange={(e) => setDay(e.target.value as DayKey)} style={select(dark)}>
               {DAYS.map((d) => (
                 <option key={d.key} value={d.key}>
                   {d.label}
@@ -95,12 +96,12 @@ export function EditTaskModal({ open, task, onClose, onSave }: Props) {
             </select>
           </label>
 
-          <label style={label}>
+          <label style={label(dark)}>
             Prioritet
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as Priority)}
-              style={select}
+              style={select(dark)}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -108,13 +109,9 @@ export function EditTaskModal({ open, task, onClose, onSave }: Props) {
             </select>
           </label>
 
-          <label style={label}>
+          <label style={label(dark)}>
             Status
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Status)}
-              style={select}
-            >
+            <select value={status} onChange={(e) => setStatus(e.target.value as Status)} style={select(dark)}>
               <option value="todo">To do</option>
               <option value="inprogress">In progress</option>
               <option value="done">Done</option>
@@ -123,10 +120,14 @@ export function EditTaskModal({ open, task, onClose, onSave }: Props) {
         </div>
 
         <div style={actions}>
-          <button style={secondaryBtn} onClick={onClose}>
+          <button style={secondaryBtn(dark)} onClick={onClose}>
             Odustani
           </button>
-          <button style={{ ...primaryBtn, opacity: canSave ? 1 : 0.6 }} onClick={handleSave} disabled={!canSave}>
+          <button
+            style={{ ...primaryBtn(dark), opacity: canSave ? 1 : 0.6 }}
+            onClick={handleSave}
+            disabled={!canSave}
+          >
             Sačuvaj
           </button>
         </div>
@@ -135,26 +136,27 @@ export function EditTaskModal({ open, task, onClose, onSave }: Props) {
   );
 }
 
-const backdrop: React.CSSProperties = {
+const backdrop = (dark: boolean): React.CSSProperties => ({
   position: "fixed",
   inset: 0,
-  background: "rgba(17, 24, 39, 0.45)",
+  background: dark ? "rgba(0,0,0,0.65)" : "rgba(17, 24, 39, 0.45)",
   display: "grid",
   placeItems: "center",
   padding: 16,
   zIndex: 50,
-};
+});
 
-const modal: React.CSSProperties = {
+const modal = (dark: boolean): React.CSSProperties => ({
   width: "min(640px, 100%)",
-  background: "white",
+  background: dark ? "#0f172a" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   borderRadius: 16,
-  border: "1px solid #e5e7eb",
-  boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+  border: dark ? "1px solid #1f2937" : "1px solid #e5e7eb",
+  boxShadow: dark ? "0 20px 60px rgba(0,0,0,0.6)" : "0 20px 60px rgba(0,0,0,0.2)",
   padding: 16,
   display: "grid",
   gap: 12,
-};
+});
 
 const topRow: React.CSSProperties = {
   display: "flex",
@@ -163,38 +165,42 @@ const topRow: React.CSSProperties = {
   gap: 12,
 };
 
-const closeBtn: React.CSSProperties = {
+const closeBtn = (dark: boolean): React.CSSProperties => ({
   width: 36,
   height: 36,
   borderRadius: 12,
-  border: "1px solid #e5e7eb",
-  background: "white",
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#020617" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   cursor: "pointer",
-};
+});
 
-const label: React.CSSProperties = {
+const label = (dark: boolean): React.CSSProperties => ({
   display: "grid",
   gap: 6,
   fontSize: 12,
-  color: "#374151",
-};
+  color: dark ? "#9ca3af" : "#374151",
+});
 
-const input: React.CSSProperties = {
+const input = (dark: boolean): React.CSSProperties => ({
   width: "100%",
   padding: "10px 12px",
   borderRadius: 10,
-  border: "1px solid #e5e7eb",
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#020617" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   outline: "none",
-};
+});
 
-const select: React.CSSProperties = {
+const select = (dark: boolean): React.CSSProperties => ({
   width: "100%",
   padding: "10px 12px",
   borderRadius: 10,
-  border: "1px solid #e5e7eb",
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#020617" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   outline: "none",
-  background: "white",
-};
+});
 
 const grid: React.CSSProperties = {
   display: "grid",
@@ -209,19 +215,20 @@ const actions: React.CSSProperties = {
   marginTop: 4,
 };
 
-const secondaryBtn: React.CSSProperties = {
+const secondaryBtn = (dark: boolean): React.CSSProperties => ({
   padding: "10px 12px",
   borderRadius: 12,
-  border: "1px solid #e5e7eb",
-  background: "white",
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#020617" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   cursor: "pointer",
-};
+});
 
-const primaryBtn: React.CSSProperties = {
+const primaryBtn = (dark: boolean): React.CSSProperties => ({
   padding: "10px 12px",
   borderRadius: 12,
-  border: "1px solid #111827",
-  background: "#111827",
-  color: "white",
+  border: dark ? "1px solid #334155" : "1px solid #111827",
+  background: dark ? "#e5e7eb" : "#111827",
+  color: dark ? "#111827" : "white",
   cursor: "pointer",
-};
+});

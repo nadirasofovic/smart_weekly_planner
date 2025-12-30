@@ -13,9 +13,10 @@ const DAYS: { key: DayKey; label: string }[] = [
 
 type Props = {
   onAdd: (task: Task) => void;
+  dark: boolean;
 };
 
-export function TaskForm({ onAdd }: Props) {
+export function TaskForm({ onAdd, dark }: Props) {
   const [title, setTitle] = useState("");
   const [day, setDay] = useState<DayKey>("mon");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -42,23 +43,23 @@ export function TaskForm({ onAdd }: Props) {
   }
 
   return (
-    <div style={card}>
+    <div style={card(dark)}>
       <h2 style={{ marginTop: 0 }}>Dodaj zadatak</h2>
 
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Npr. završiti vježbe iz TS-a"
-        style={input}
+        style={input(dark)}
         onKeyDown={(e) => {
           if (e.key === "Enter") submit();
         }}
       />
 
       <div style={row}>
-        <label style={label}>
+        <label style={label(dark)}>
           Dan
-          <select value={day} onChange={(e) => setDay(e.target.value as DayKey)} style={select}>
+          <select value={day} onChange={(e) => setDay(e.target.value as DayKey)} style={select(dark)}>
             {DAYS.map((d) => (
               <option key={d.key} value={d.key}>
                 {d.label}
@@ -67,12 +68,12 @@ export function TaskForm({ onAdd }: Props) {
           </select>
         </label>
 
-        <label style={label}>
+        <label style={label(dark)}>
           Prioritet
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value as Priority)}
-            style={select}
+            style={select(dark)}
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -80,12 +81,12 @@ export function TaskForm({ onAdd }: Props) {
           </select>
         </label>
 
-        <label style={label}>
+        <label style={label(dark)}>
           Status
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as Status)}
-            style={select}
+            style={select(dark)}
           >
             <option value="todo">To do</option>
             <option value="inprogress">In progress</option>
@@ -94,19 +95,21 @@ export function TaskForm({ onAdd }: Props) {
         </label>
       </div>
 
-      <button onClick={submit} style={btn}>
+      <button onClick={submit} style={btn(dark)}>
         + Dodaj
       </button>
     </div>
   );
 }
 
-const card: React.CSSProperties = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 14,
+/* ===== styles ===== */
+
+const card = (dark: boolean): React.CSSProperties => ({
+  background: dark ? "#0f172a" : "white",
+  border: dark ? "1px solid #1f2937" : "1px solid #e5e7eb",
+  borderRadius: 16,
   padding: 16,
-  background: "white",
-};
+});
 
 const row: React.CSSProperties = {
   display: "grid",
@@ -115,32 +118,40 @@ const row: React.CSSProperties = {
   marginTop: 12,
 };
 
-const label: React.CSSProperties = { display: "grid", gap: 6, fontSize: 12, color: "#374151" };
+const label = (dark: boolean): React.CSSProperties => ({
+  display: "grid",
+  gap: 6,
+  fontSize: 12,
+  color: dark ? "#9ca3af" : "#374151",
+});
 
-const input: React.CSSProperties = {
+const input = (dark: boolean): React.CSSProperties => ({
   width: "100%",
   padding: "10px 12px",
   borderRadius: 10,
-  border: "1px solid #e5e7eb",
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#020617" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   outline: "none",
-};
+});
 
-const select: React.CSSProperties = {
+const select = (dark: boolean): React.CSSProperties => ({
   width: "100%",
   padding: "10px 12px",
   borderRadius: 10,
-  border: "1px solid #e5e7eb",
+  border: dark ? "1px solid #334155" : "1px solid #e5e7eb",
+  background: dark ? "#020617" : "white",
+  color: dark ? "#e5e7eb" : "#111827",
   outline: "none",
-  background: "white",
-};
+});
 
-const btn: React.CSSProperties = {
+const btn = (dark: boolean): React.CSSProperties => ({
   marginTop: 12,
   width: "100%",
   padding: "10px 12px",
   borderRadius: 12,
-  border: "1px solid #111827",
-  background: "#111827",
-  color: "white",
+  border: dark ? "1px solid #334155" : "1px solid #111827",
+  background: dark ? "#020617" : "#111827",
+  color: "#ffffff",
   cursor: "pointer",
-};
+});
