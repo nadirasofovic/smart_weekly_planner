@@ -1,38 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DayKey, Priority, Status, Task } from "../types/task";
+import type { DayKey, Priority, Status, Task, RecurrenceType } from "../types/task";
+import { useTheme } from "../contexts/ThemeContext";
+import { DAYS } from "../constants/days";
+import { format } from "date-fns";
+import { parseISO } from "date-fns";
 
 type Props = {
   open: boolean;
   task: Task | null;
   onClose: () => void;
   onSave: (id: string, patch: Partial<Task>) => void;
-  dark?: boolean; 
+  weekStart?: Date;
 };
 
-const DAYS: { key: DayKey; label: string }[] = [
-  { key: "mon", label: "Pon" },
-  { key: "tue", label: "Uto" },
-  { key: "wed", label: "Sri" },
-  { key: "thu", label: "Čet" },
-  { key: "fri", label: "Pet" },
-  { key: "sat", label: "Sub" },
-  { key: "sun", label: "Ned" },
-];
-
-export function EditTaskModal({ open, task, onClose, onSave, dark = false }: Props) {
+export function EditTaskModal({ open, task, onClose, onSave }: Props) {
+  const { isDark } = useTheme();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [day, setDay] = useState<DayKey>("mon");
   const [priority, setPriority] = useState<Priority>("medium");
   const [status, setStatus] = useState<Status>("todo");
+  const [recurrence, setRecurrence] = useState<RecurrenceType>("none");
+  const [tags, setTags] = useState("");
+  const [date, setDate] = useState("");
 
   const canRender = open && task;
 
   useEffect(() => {
     if (!task) return;
     setTitle(task.title);
+    setDescription(task.description || "");
     setDay(task.day);
     setPriority(task.priority);
     setStatus(task.status);
+    setRecurrence(task.recurrence || "none");
+    setTags((task.tags || []).join(", "));
+    if (task.date) {
+      const taskDate = typeof task.date === "string" ? parseISO(task.date) : task.date;
+      setDate(format(taskDate, "yyyy-MM-dd"));
+    } else {
+      setDate("");
+    }
   }, [task]);
 
   const canSave = useMemo(() => title.trim().length > 0, [title]);
@@ -42,11 +50,17 @@ export function EditTaskModal({ open, task, onClose, onSave, dark = false }: Pro
     const cleanTitle = title.trim();
     if (!cleanTitle) return;
 
+    const taskDate = date ? parseISO(date) : undefined;
+
     onSave(task.id, {
       title: cleanTitle,
+      description: description.trim() || undefined,
       day,
+      date: taskDate?.toISOString(),
       priority,
       status,
+      tags: tags.trim() ? tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
+      recurrence: recurrence !== "none" ? recurrence : undefined,
     });
 
     onClose();
@@ -56,38 +70,63 @@ export function EditTaskModal({ open, task, onClose, onSave, dark = false }: Pro
 
   return (
     <div
-      style={backdrop(dark)}
+      style={backdrop(isDark)}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div style={modal(dark)} role="dialog" aria-modal="true" aria-label="Edit task">
+      <div style={modal(isDark)} role="dialog" aria-modal="true" aria-label="Edit task">
         <div style={topRow}>
           <h3 style={{ margin: 0 }}>Uredi zadatak</h3>
-          <button style={closeBtn(dark)} onClick={onClose} aria-label="Close">
+          <button style={closeBtn(isDark)} onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>
 
-        <label style={label(dark)}>
-          Naziv
+        <label style={label(isDark)}>
+          Naziv *
           <input
-            style={input(dark)}
+            style={input(isDark)}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Npr. završiti domaću zadaću"
             autoFocus
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSave();
+              }
               if (e.key === "Escape") onClose();
             }}
           />
         </label>
 
+        <label style={label(isDark)}>
+          Opis (max 500 karaktera)
+          <textarea
+            value={description}
+            onChange={(e) => {
+              if (e.target.value.length <= 500) {
+                setDescription(e.target.value);
+              }
+            }}
+            placeholder="Dodatne napomene..."
+            style={textarea(isDark)}
+            rows={3}
+          />
+          <small style={{ color: isDark ? "#6b7280" : "#9ca3af" }}>
+            {description.length}/500
+          </small>
+        </label>
+
         <div style={grid}>
-          <label style={label(dark)}>
+          <label style={label(isDark)}>
             Dan
-            <select value={day} onChange={(e) => setDay(e.target.value as DayKey)} style={select(dark)}>
+            <select
+              value={day}
+              onChange={(e) => setDay(e.target.value as DayKey)}
+              style={select(isDark)}
+            >
               {DAYS.map((d) => (
                 <option key={d.key} value={d.key}>
                   {d.label}
@@ -96,35 +135,75 @@ export function EditTaskModal({ open, task, onClose, onSave, dark = false }: Pro
             </select>
           </label>
 
-          <label style={label(dark)}>
+          <label style={label(isDark)}>
+            Datum
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={input(isDark)}
+            />
+          </label>
+
+          <label style={label(isDark)}>
             Prioritet
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as Priority)}
-              style={select(dark)}
+              style={select(isDark)}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
           </label>
+        </div>
 
-          <label style={label(dark)}>
+        <div style={grid}>
+          <label style={label(isDark)}>
             Status
-            <select value={status} onChange={(e) => setStatus(e.target.value as Status)} style={select(dark)}>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Status)}
+              style={select(isDark)}
+            >
               <option value="todo">To do</option>
               <option value="inprogress">In progress</option>
               <option value="done">Done</option>
             </select>
           </label>
+
+          <label style={label(isDark)}>
+            Ponavljanje
+            <select
+              value={recurrence}
+              onChange={(e) => setRecurrence(e.target.value as RecurrenceType)}
+              style={select(isDark)}
+            >
+              <option value="none">Ne ponavlja se</option>
+              <option value="daily">Dnevno</option>
+              <option value="weekly">Nedeljno</option>
+              <option value="monthly">Mesečno</option>
+            </select>
+          </label>
+
+          <label style={label(isDark)}>
+            Tagovi (razdvojeno zarezom)
+            <input
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="npr. posao, hitno"
+              style={input(isDark)}
+            />
+          </label>
         </div>
 
         <div style={actions}>
-          <button style={secondaryBtn(dark)} onClick={onClose}>
+          <button style={secondaryBtn(isDark)} onClick={onClose}>
             Odustani
           </button>
           <button
-            style={{ ...primaryBtn(dark), opacity: canSave ? 1 : 0.6 }}
+            style={{ ...primaryBtn(isDark), opacity: canSave ? 1 : 0.6 }}
             onClick={handleSave}
             disabled={!canSave}
           >
@@ -148,6 +227,8 @@ const backdrop = (dark: boolean): React.CSSProperties => ({
 
 const modal = (dark: boolean): React.CSSProperties => ({
   width: "min(640px, 100%)",
+  maxHeight: "90vh",
+  overflowY: "auto",
   background: dark ? "#0f172a" : "white",
   color: dark ? "#e5e7eb" : "#111827",
   borderRadius: 16,
@@ -190,6 +271,13 @@ const input = (dark: boolean): React.CSSProperties => ({
   background: dark ? "#020617" : "white",
   color: dark ? "#e5e7eb" : "#111827",
   outline: "none",
+  fontFamily: "inherit",
+});
+
+const textarea = (dark: boolean): React.CSSProperties => ({
+  ...input(dark),
+  resize: "vertical",
+  minHeight: 60,
 });
 
 const select = (dark: boolean): React.CSSProperties => ({
@@ -200,6 +288,7 @@ const select = (dark: boolean): React.CSSProperties => ({
   background: dark ? "#020617" : "white",
   color: dark ? "#e5e7eb" : "#111827",
   outline: "none",
+  fontFamily: "inherit",
 });
 
 const grid: React.CSSProperties = {

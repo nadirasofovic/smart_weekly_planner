@@ -28,5 +28,5 @@ export function useTasks() {
     return { total, done, percent };
   }, [tasks]);
 
-  return { tasks, addTask, updateTask, deleteTask, stats };
+  return { tasks, addTask, updateTask, deleteTask, stats, setTasks };
 }

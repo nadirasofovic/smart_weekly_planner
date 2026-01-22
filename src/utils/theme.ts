@@ -13,5 +13,9 @@ export function loadTheme(): ThemeMode {
 }
 
 export function saveTheme(mode: ThemeMode) {
-  localStorage.setItem(KEY, mode);
+  try {
+    localStorage.setItem(KEY, mode);
+  } catch (error) {
+    console.error("Failed to save theme:", error);
+  }
 }

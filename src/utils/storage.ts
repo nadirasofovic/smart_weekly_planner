@@ -14,5 +14,14 @@ export function loadTasks(): Task[] {
 }
 
 export function saveTasks(tasks: Task[]) {
-  localStorage.setItem(KEY, JSON.stringify(tasks));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(tasks));
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "QuotaExceededError") {
+      console.error("Storage quota exceeded. Cannot save tasks.");
+      // Could show a user-friendly error message here
+    } else {
+      console.error("Failed to save tasks:", error);
+    }
+  }
 }

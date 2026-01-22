@@ -4,5 +4,6 @@ export type Filters = {
   day: "all" | DayKey;
   priority: "all" | Priority;
   status: "all" | Status;
-  query: string; 
+  query: string;
+  tags?: string[];
 };
