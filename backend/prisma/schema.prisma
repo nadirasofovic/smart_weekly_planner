@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  name            String?
+  themePreference String   @default("light") @map("theme_preference")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tasks       Task[]
+  tags        Tag[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Task {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  title             String
+  description       String?
+  day               String   // mon, tue, wed, thu, fri, sat, sun
+  date              String?  // ISO date string
+  priority          String   @default("medium") // low, medium, high
+  status            String   @default("todo") // todo, inprogress, done
+  position          Int      @default(0) // For drag-and-drop ordering
+  parentTaskId      String?  @map("parent_task_id") // For subtasks
+  recurrencePattern String?  @map("recurrence_pattern") // JSON string
+  dueDate           String?  @map("due_date") // ISO timestamp
+  completedAt       String?  @map("completed_at") // ISO timestamp
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentTask   Task?           @relation("TaskSubtasks", fields: [parentTaskId], references: [id])
+  subtasks     Task[]          @relation("TaskSubtasks")
+  dependencies TaskDependency[] @relation("TaskDependencies")
+  dependents   TaskDependency[] @relation("TaskDependents")
+  taskTags     TaskTag[]
+  notifications Notification[]
+
+  @@index([userId])
+  @@index([day])
+  @@index([date])
+  @@index([status])
+  @@map("tasks")
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id") // null = shared tags
+  name      String
+  color     String   @default("#3b82f6") // Hex color code
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskTags TaskTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("tags")
+}
+
+model TaskTag {
+  taskId String @map("task_id")
+  tagId  String @map("tag_id")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+  @@map("task_tags")
+}
+
+model TaskDependency {
+  id              String @id @default(uuid())
+  taskId          String @map("task_id")
+  dependsOnTaskId String @map("depends_on_task_id")
+
+  task          Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask Task @relation("TaskDependents", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+  @@index([taskId])
+  @@index([dependsOnTaskId])
+  @@map("task_dependencies")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  taskId    String?  @map("task_id")
+  type      String   // reminder, due_soon, overdue, dependency_completed, weekly_summary
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
